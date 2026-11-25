@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>uk</string>
+    <key>CFBundleDisplayName</key>
+    <string>FrameKit</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.framekit.app</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>FrameKit</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.5</string>
+    <key>CFBundleVersion</key>
+    <string>7</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>FrameKit uses your GPS location to calculate sun azimuth, Golden Hour, and save shooting spots.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>FrameKit saves your edited photos directly to your iPhone Photo Library.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>FrameKit accesses your photos to open JPG and RAW files in the photo editor.</string>
+</dict>
+</plist>

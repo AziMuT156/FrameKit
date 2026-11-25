@@ -1,0 +1,51 @@
+name: Build FrameKit iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Sync Web App into iOS bundle
+        run: |
+          rm -rf framekit_ios/www
+          cp -R framekit_pwa framekit_ios/www
+          rm -f framekit_ios/www/Start_Preview.bat framekit_ios/www/sw.js
+
+      - name: Generate Xcode project
+        working-directory: framekit_ios
+        run: xcodegen generate
+
+      - name: Build unsigned iOS .app
+        working-directory: framekit_ios
+        run: |
+          xcodebuild \
+            -project FrameKit.xcodeproj \
+            -scheme FrameKit \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned FrameKit_v1.5.ipa
+        run: |
+          mkdir -p Payload
+          cp -R framekit_ios/build/Build/Products/Release-iphoneos/FrameKit.app Payload/FrameKit.app
+          zip -qry FrameKit_v1.5.ipa Payload
+
+      - name: Upload FrameKit_v1.5.ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FrameKit_v1.5.ipa
+          path: FrameKit_v1.5.ipa

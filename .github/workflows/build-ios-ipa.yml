@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-ipa:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:

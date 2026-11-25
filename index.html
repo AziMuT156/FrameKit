@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#3f47cc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="FrameKit" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>FrameKit — Інструменти фотографа</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./vendor/leaflet.css" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div id="logo-easter-trigger" class="brand-mark" title="FrameKit">
+        <img src="./icons/icon-192.png" alt="Logo" />
+      </div>
+      <div>
+        <div class="brand-title">FrameKit</div>
+        <div class="brand-sub" id="topbar-gear-summary" data-i18n="topbar_sub_default">Кишеньковий набір фотографа</div>
+      </div>
+    </div>
+    <button id="btn-install" class="install-btn" type="button" data-i18n="btn_install">+ Встановити</button>
+  </header>
+
+  <main class="app-main">
+    <!-- ==================== ВКЛАДКА 1: РЕДАКТОР + AI-КРИТИК ==================== -->
+    <section id="tab-editor" class="tab-panel active">
+      <div class="segmented">
+        <button class="seg-btn active" data-sub="ed-home" type="button" data-i18n="sub_ed_home">Фоторедактор</button>
+        <button class="seg-btn" data-sub="ed-ai" type="button" data-i18n="sub_ed_ai">AI-критик</button>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ФОТОРЕДАКТОР (ВХІД У ПОВНОЕКРАННУ СТУДІЮ) -->
+      <div id="sub-ed-home" class="sub-panel active">
+        <div class="card">
+          <div class="card-title">
+            <span>FrameKit Studio</span>
+            <span class="badge badge-amber" data-i18n="ed_studio_badge">GPU Офлайн</span>
+          </div>
+          <p class="muted" style="margin-top:0; margin-bottom:12px;" data-i18n="ed_studio_desc">
+            Вибери фото з галереї — відкриється чиста повноекранна студія (без нижніх вкладок): світло, 8-канальний HSL, Color Grading, тональна крива, маски (градієнт, радіальна, пензель), кроп і збереження у Галерею.
+          </p>
+          <label class="btn btn-primary" style="width:100%; min-height:46px; cursor:pointer; font-size:13px; margin-bottom:8px;">
+            <span data-i18n="ed_open_photo">+ Відкрити фото з галереї (JPG / PNG)</span>
+            <input id="inp-studio-file" type="file" accept="image/*" style="display:none;" />
+          </label>
+          <label class="btn btn-blue" style="width:100%; min-height:46px; cursor:pointer; font-size:13px;">
+            <span data-i18n="ed_open_raw">+ Відкрити RAW (.CR3 / .ARW / .NEF / .DNG)</span>
+            <input id="inp-studio-raw" type="file" accept="*/*" style="display:none;" />
+          </label>
+          <p class="muted" style="margin:10px 0 0;" data-i18n="ed_raw_note">
+            100% офлайн 16-біт RAW-движок (LibRaw): Canon CR3/CR2, Sony ARW, Nikon NEF, Fuji RAF, DNG, ORF, RW2 + повний EXIF і витягування пересвітів.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="ed_my_presets">Мої пресети</span>
+            <span class="badge badge-blue" id="ed-presets-count">0</span>
+          </div>
+          <div class="btn-row" style="margin-bottom:10px;">
+            <label class="btn btn-sm btn-blue" style="cursor:pointer;">
+              <span data-i18n="ed_import_preset">+ Імпорт пресета (.fkpreset)</span>
+              <input id="inp-import-preset" type="file" accept=".fkpreset,.json,*/*" style="display:none;" />
+            </label>
+          </div>
+          <div id="ed-custom-presets-list"></div>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: AI-КРИТИК КАДРУ -->
+      <div id="sub-ed-ai" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="ai_card_title">AI-критик і порадник (Gemini)</span>
+            <span class="badge badge-blue" id="ai-key-status">Ключ не задано</span>
+          </div>
+
+          <div id="ai-no-key-banner" class="metric" style="margin-bottom:10px; border-color: var(--amber);">
+            <div style="font-size:12px; margin-bottom:6px;" data-i18n-html="ai_no_key_hint">
+              Щоб AI-критик працював, встав безкоштовний ключ <strong>Gemini API</strong> у вкладці «Налаштування».
+            </div>
+            <button id="btn-goto-settings-key" class="btn btn-sm btn-primary" type="button" data-i18n="ai_goto_settings">Перейти в Налаштування</button>
+          </div>
+
+          <div class="field">
+            <label class="btn btn-blue" style="width:100%; cursor:pointer;">
+              <span data-i18n="ai_upload_btn">+ Завантажити кадр на розбір</span>
+              <input id="inp-ai-photo" type="file" accept="image/*" style="display:none;" />
+            </label>
+            <img id="ai-preview" class="ai-preview-img no-red-filter" alt="Кадр" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="sel-ai-style"><span data-i18n="ai_style_label">Стиль критики</span></label>
+            <select id="sel-ai-style">
+              <option value="balanced" data-i18n="ai_style_balanced">Конструктивний порадник + повзунки Lightroom</option>
+              <option value="roast" data-i18n="ai_style_roast">Жорсткий арт-директор (чесний рознос + що виправити)</option>
+            </select>
+          </div>
+
+          <button id="btn-run-ai" class="btn btn-primary" style="width:100%;" type="button" data-i18n="ai_run_btn">Розібрати кадр</button>
+        </div>
+
+        <div id="ai-result-card" class="card" style="display:none;">
+          <div class="card-title">
+            <span data-i18n="ai_result_title">Розбір кадру</span>
+            <span class="badge badge-green" id="ai-model-badge">Gemini</span>
+          </div>
+          <div id="ai-output" class="ai-output"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 2: КАЛЬКУЛЯТОРИ ==================== -->
+    <section id="tab-calc" class="tab-panel">
+      <div class="segmented cols-5">
+        <button class="seg-btn active" data-sub="dof" type="button" data-i18n="sub_dof">ГРІП</button>
+        <button class="seg-btn" data-sub="expo" type="button" data-i18n="sub_expo">Експо</button>
+        <button class="seg-btn" data-sub="nd" type="button" data-i18n="sub_nd">ND</button>
+        <button class="seg-btn" data-sub="astro" type="button" data-i18n="sub_astro">Астро</button>
+        <button class="seg-btn" data-sub="timelapse" type="button" data-i18n="sub_timelapse">Лапс</button>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ГРІП -->
+      <div id="sub-dof" class="sub-panel active">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="dof_gear_title">Камера й об'єктив</span>
+            <span class="badge badge-amber" id="dof-sensor-badge">Full Frame</span>
+          </div>
+
+          <div id="quick-kit-wrap" class="field" style="display:none;">
+            <div class="field-label"><span data-i18n="dof_quick_kit">Мій рюкзак (швидкий вибір)</span></div>
+            <div id="quick-kit-chips" class="chips"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="sel-brand"><span data-i18n="dof_brand_lbl">1. Бренд камери</span></label>
+            <select id="sel-brand"></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sel-model"><span data-i18n="dof_model_lbl">2. Модель камери</span></label>
+            <select id="sel-model"></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sel-lens"><span data-i18n="dof_lens_lbl">3. Об'єктив</span></label>
+            <select id="sel-lens"></select>
+          </div>
+
+          <div class="btn-row" style="margin-top: 8px;">
+            <button id="btn-save-kit" class="btn btn-sm btn-blue" type="button" data-i18n="dof_save_kit">+ Зберегти пару в «Мій рюкзак»</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="dof_frame_title">Параметри кадру</span>
+            <span class="badge" id="dof-equiv-badge">екв. 50 мм</span>
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="dof_focal_lbl">Фокусна відстань</span>
+              <span class="field-val" id="val-focal">50 мм</span>
+            </div>
+            <input id="rng-focal" type="range" min="14" max="200" step="1" value="50" />
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="dof_aperture_lbl">Діафрагма (f-number)</span>
+              <span class="field-val" id="val-aperture">f/1.8</span>
+            </div>
+            <input id="rng-aperture" type="range" min="0" max="27" step="1" value="4" />
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="dof_dist_lbl">Дистанція до об'єкта</span>
+              <span class="field-val" id="val-dist">2.00 м</span>
+            </div>
+            <input id="rng-dist" type="range" min="0" max="100" step="1" value="35" />
+            <div class="btn-row" style="margin-top: 4px;">
+              <button class="btn btn-sm" data-dist="0.5" type="button">0.5m</button>
+              <button class="btn btn-sm" data-dist="1.5" type="button">1.5m</button>
+              <button class="btn btn-sm" data-dist="3" type="button">3m</button>
+              <button class="btn btn-sm" data-dist="10" type="button">10m</button>
+              <button id="btn-set-hyperfocal" class="btn btn-sm btn-blue" type="button" data-i18n="dof_hyperfocal_btn">На гіперфокал</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="dof_result_title">Результат різкості</span>
+            <span class="badge badge-blue" id="dof-fov-badge">Кут: 39.6° × 27.0°</span>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric">
+              <div class="metric-label" data-i18n="dof_total_lbl">Загальна ГРІП</div>
+              <div class="metric-value accent" id="res-dof-total">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="dof_hyper_lbl">Гіперфокальна відстань</div>
+              <div class="metric-value blue" id="res-hyperfocal">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="dof_near_lbl">Ближня межа різкості</div>
+              <div class="metric-value" id="res-near">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="dof_far_lbl">Дальня межа різкості</div>
+              <div class="metric-value" id="res-far">—</div>
+            </div>
+          </div>
+
+          <div class="dof-visual">
+            <div class="dof-legend">
+              <span><span data-i18n="dof_front_lbl">Перед об'єктом:</span> <strong id="res-front">—</strong></span>
+              <span><span data-i18n="dof_behind_lbl">За об'єктом:</span> <strong id="res-behind">—</strong></span>
+            </div>
+            <div class="dof-bar-track">
+              <div id="dof-bar-zone" class="dof-bar-zone"></div>
+              <div id="dof-bar-subject" class="dof-bar-subject"></div>
+            </div>
+            <div class="dof-legend">
+              <span data-i18n="dof_camera_lbl">Камера</span>
+              <span id="dof-bar-mid">Об'єкт</span>
+              <span id="dof-bar-max">∞</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ЕКВІВАЛЕНТНА ЕКСПОЗИЦІЯ -->
+      <div id="sub-expo" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="expo_base_title">1. Поточний замір (базовий кадр)</span>
+            <span class="badge badge-amber" id="expo-ev-badge">EV 10.0</span>
+          </div>
+          <div class="grid-2" style="margin-bottom:8px;">
+            <div class="field">
+              <label class="field-label" for="sel-exp-b-ap"><span data-i18n="expo_ap_lbl">Діафрагма</span></label>
+              <select id="sel-exp-b-ap"></select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="sel-exp-b-shut"><span data-i18n="expo_shut_lbl">Витримка</span></label>
+              <select id="sel-exp-b-shut"></select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sel-exp-b-iso"><span data-i18n="expo_iso_lbl">ISO</span></label>
+            <select id="sel-exp-b-iso"></select>
+          </div>
+          <div class="muted" id="expo-scene-desc"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="expo_target_title">2. Нові параметри (що перерахувати?)</span>
+          </div>
+          <div class="btn-row" id="expo-solve-btns" style="margin-bottom:10px;">
+            <button class="btn btn-sm btn-primary" data-solve="shutter" type="button" data-i18n="expo_solve_shutter">Витримку</button>
+            <button class="btn btn-sm" data-solve="aperture" type="button" data-i18n="expo_solve_ap">Діафрагму</button>
+            <button class="btn btn-sm" data-solve="iso" type="button" data-i18n="expo_solve_iso">ISO</button>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:8px;">
+            <div class="field" id="wrap-exp-t-ap">
+              <label class="field-label" for="sel-exp-t-ap"><span data-i18n="expo_ap_lbl">Діафрагма</span></label>
+              <select id="sel-exp-t-ap"></select>
+            </div>
+            <div class="field" id="wrap-exp-t-shut">
+              <label class="field-label" for="sel-exp-t-shut"><span data-i18n="expo_shut_lbl">Витримка</span></label>
+              <select id="sel-exp-t-shut"></select>
+            </div>
+          </div>
+          <div class="field" id="wrap-exp-t-iso">
+            <label class="field-label" for="sel-exp-t-iso"><span data-i18n="expo_iso_lbl">ISO</span></label>
+            <select id="sel-exp-t-iso"></select>
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="expo_comp_lbl">Корекція яскравості (EV)</span>
+              <span class="field-val" id="val-exp-comp">0.0 EV</span>
+            </div>
+            <input id="rng-exp-comp" type="range" min="-3" max="3" step="0.333" value="0" />
+          </div>
+
+          <div class="nd-result-box">
+            <div class="nd-sub" id="expo-res-label" data-i18n="expo_result_lbl">Еквівалентне значення</div>
+            <div class="nd-result-time" id="expo-res-value">—</div>
+            <div class="nd-sub" id="expo-res-hint">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: АСТРО-КАЛЬКУЛЯТОР (NPF + МІСЯЦЬ) -->
+      <div id="sub-astro" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="astro_title">Астро-калькулятор (NPF + 500)</span>
+            <span class="badge badge-blue" id="astro-gear-badge">50mm f/1.8</span>
+          </div>
+          <p class="muted" style="margin-top:0; margin-bottom:8px;" data-i18n="astro_gear_sync">
+            Взято камеру й об'єктив із вкладки ГРІП
+          </p>
+
+          <div class="grid-2" style="margin-bottom:8px;">
+            <div class="field">
+              <label class="field-label" for="inp-astro-mp"><span data-i18n="astro_mp_lbl">Мегапікселі (MP)</span></label>
+              <input id="inp-astro-mp" type="number" min="4" max="150" step="0.1" value="30.3" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="sel-astro-decl"><span data-i18n="astro_decl_lbl">Схилення неба</span></label>
+              <select id="sel-astro-decl">
+                <option value="0" data-i18n="astro_decl_eq">0° — Екватор / Чумацький Шлях</option>
+                <option value="30" data-i18n="astro_decl_mid">30° — Середня висота</option>
+                <option value="60" data-i18n="astro_decl_north">60° — Біля Полярної</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="metrics-grid" style="margin-bottom:0;">
+            <div class="metric">
+              <div class="metric-label" data-i18n="astro_npf_strict">NPF (ідеальні точки)</div>
+              <div class="metric-value accent" id="res-astro-npf1">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="astro_npf_relaxed">NPF (допустимо)</div>
+              <div class="metric-value blue" id="res-astro-npf2">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="astro_rule500">Правило 500</div>
+              <div class="metric-value" id="res-astro-500">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="astro_pitch_lbl">Крок пікселя</div>
+              <div class="metric-value" id="res-astro-pitch">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="astro_moon_title">Фаза Місяця (офлайн)</span>
+            <span class="badge badge-amber" id="astro-moon-pct">—%</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="inp-astro-date"><span data-i18n="astro_moon_date">Дата зйомки</span></label>
+            <input id="inp-astro-date" type="date" />
+          </div>
+          <div class="moon-row">
+            <div id="astro-moon-svg"></div>
+            <div style="flex:1; min-width:0;">
+              <div id="astro-moon-name" style="font-weight:800; font-size:14px; color:#ffffff; margin-bottom:4px;">—</div>
+              <div id="astro-moon-age" class="muted" style="margin-bottom:6px;">—</div>
+              <span id="astro-moon-rating" class="badge badge-green">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span data-i18n="astro_tips_title">Чеклист нічного неба</span></div>
+          <p class="muted" style="margin:0;" data-i18n="astro_tips_body">
+            Формат RAW, ручний фокус на яскраву зірку через Live View ×10, стабілізацію (IBIS/IS) ВИМКНУТИ на штативі, ISO 1600–3200, діафрагма максимально відкрита.
+          </p>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ND-ФІЛЬТРИ + ТАЙМЕР -->
+      <div id="sub-nd" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="nd_title">Калькулятор ND-фільтрів</span>
+            <span class="badge badge-amber" id="nd-stops-badge">+10 стопів</span>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="sel-base-shutter"><span data-i18n="nd_base_shutter">Базова витримка (без фільтра)</span></label>
+            <select id="sel-base-shutter"></select>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="sel-nd1"><span data-i18n="nd_filter1">Фільтр 1</span></label>
+              <select id="sel-nd1"></select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="sel-nd2"><span data-i18n="nd_filter2">Фільтр 2 (стек)</span></label>
+              <select id="sel-nd2"></select>
+            </div>
+          </div>
+
+          <div class="nd-result-box">
+            <div class="nd-sub" data-i18n="nd_new_lbl">Нова витримка з фільтром</div>
+            <div class="nd-result-time" id="nd-new-shutter">8.0 с</div>
+            <div class="nd-sub" id="nd-bulb-hint">Звичайний режим камери</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="timer_title">Таймер довгої витримки (Bulb)</span>
+            <span class="badge" id="timer-state-badge" data-i18n="timer_wait">Очікування</span>
+          </div>
+
+          <div class="timer-box">
+            <div class="timer-clock" id="timer-display">00:08</div>
+            <div class="timer-progress">
+              <div id="timer-progress-fill" class="timer-progress-fill"></div>
+            </div>
+            <div class="btn-row" style="justify-content: center;">
+              <button id="btn-timer-start" class="btn btn-primary" type="button" data-i18n="timer_start">Старт таймера</button>
+              <button id="btn-timer-reset" class="btn" type="button" data-i18n="timer_reset">Скинути</button>
+            </div>
+            <p class="muted" style="margin: 10px 0 0;" data-i18n="timer_note">
+              За 3 секунди до кінця прозвучить сигнал і вібрація, екран не згасне.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ТАЙМЛАПС -->
+      <div id="sub-timelapse" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="tl_title">Калькулятор таймлапсу</span>
+            <span class="badge badge-blue">Timelapse</span>
+          </div>
+
+          <div class="field">
+            <div class="field-label"><span data-i18n="tl_presets_lbl">Швидкі пресети інтервалу</span></div>
+            <div class="btn-row">
+              <button class="btn btn-sm" data-tl-int="1" type="button" data-i18n="tl_p_traffic">Трафік (1с)</button>
+              <button class="btn btn-sm" data-tl-int="3" type="button" data-i18n="tl_p_clouds">Хмари (3с)</button>
+              <button class="btn btn-sm" data-tl-int="5" type="button" data-i18n="tl_p_sunset">Захід (5с)</button>
+              <button class="btn btn-sm" data-tl-int="20" type="button" data-i18n="tl_p_stars">Зірки (20с)</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="tl_clip_lbl">Довжина готового відео</span>
+              <span class="field-val" id="val-tl-clip">15 с</span>
+            </div>
+            <input id="rng-tl-clip" type="range" min="3" max="120" step="1" value="15" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="sel-tl-fps"><span data-i18n="tl_fps_lbl">FPS відео</span></label>
+              <select id="sel-tl-fps">
+                <option value="24" data-i18n="tl_fps_24">24 fps (Кіно)</option>
+                <option value="25" data-i18n="tl_fps_25">25 fps (PAL)</option>
+                <option value="30" data-i18n="tl_fps_30">30 fps (Стандарт)</option>
+                <option value="60" data-i18n="tl_fps_60">60 fps (Плавний)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="inp-tl-raw"><span data-i18n="tl_raw_lbl">Розмір 1 RAW (МБ)</span></label>
+              <input id="inp-tl-raw" type="number" min="2" max="200" step="1" value="35" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">
+              <span data-i18n="tl_interval_lbl">Інтервал між кадрами</span>
+              <span class="field-val" id="val-tl-interval">3 с</span>
+            </div>
+            <input id="rng-tl-interval" type="range" min="1" max="60" step="1" value="3" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span data-i18n="tl_result_title">Розрахунок зйомки</span></div>
+          <div class="metrics-grid" style="margin-bottom:0;">
+            <div class="metric">
+              <div class="metric-label" data-i18n="tl_shoot_lbl">Реальний час зйомки</div>
+              <div class="metric-value accent" id="res-tl-shoot">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="tl_frames_lbl">Усього кадрів</div>
+              <div class="metric-value blue" id="res-tl-frames">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="tl_storage_lbl">Місце на SD-карті</div>
+              <div class="metric-value" id="res-tl-storage">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="tl_shutter_lbl">Витримка (правило 180°)</div>
+              <div class="metric-value" id="res-tl-shutter">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 3: СОНЦЕ + ЛОКАЦІЇ + ШЕДЕВРИ ==================== -->
+    <section id="tab-sun" class="tab-panel">
+      <div class="segmented">
+        <button class="seg-btn active" data-sub="sunmap" type="button" data-i18n="sub_sunmap">Карта + Споти</button>
+        <button class="seg-btn" data-sub="gallery" type="button" data-i18n="sub_gallery">Шедеври з GPS</button>
+      </div>
+
+      <!-- ПІДВКЛАДКА: КАРТА І СПОТИ -->
+      <div id="sub-sunmap" class="sub-panel active">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="sun_title">Карта й напрямок сонця</span>
+            <span class="badge badge-amber" id="sun-coords-badge">50.45, 30.52</span>
+          </div>
+
+          <div class="map-wrap">
+            <div id="sun-map"></div>
+            <div id="compass-fallback" class="compass-fallback">
+              <svg id="compass-svg" width="220" height="220" viewBox="0 0 220 220"></svg>
+              <div class="muted" data-i18n="sun_offline_compass">Офлайн-компас сонця</div>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-bottom: 10px;">
+            <button id="btn-gps" class="btn btn-sm btn-primary" type="button" data-i18n="sun_my_gps">Моє місце (GPS)</button>
+            <button id="btn-sun-now" class="btn btn-sm" type="button" data-i18n="sun_now">Зараз</button>
+            <button id="btn-sun-golden" class="btn btn-sm btn-blue" type="button" data-i18n="sun_golden_btn">На Golden Hour</button>
+            <button id="btn-open-gmaps" class="btn btn-sm" type="button">Google Maps</button>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 6px;">
+            <div class="field">
+              <label class="field-label" for="inp-sun-date"><span data-i18n="sun_date_lbl">Дата</span></label>
+              <input id="inp-sun-date" type="date" />
+            </div>
+            <div class="field">
+              <div class="field-label">
+                <span data-i18n="sun_time_lbl">Час доби</span>
+                <span class="field-val" id="val-sun-time">16:30</span>
+              </div>
+              <input id="rng-sun-min" type="range" min="0" max="1439" step="5" value="990" />
+            </div>
+          </div>
+
+          <div class="metrics-grid" style="margin-bottom: 8px;">
+            <div class="metric">
+              <div class="metric-label" data-i18n="sun_az_lbl">Азимут сонця</div>
+              <div class="metric-value accent" id="res-sun-az">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label" data-i18n="sun_alt_lbl">Висота / Тінь</div>
+              <div class="metric-value blue" id="res-sun-alt">—</div>
+            </div>
+          </div>
+
+          <div class="sun-times-grid">
+            <div class="sun-pill blue">
+              <div class="sp-title" data-i18n="sun_blue_am">Blue Hour (ранок)</div>
+              <div class="sp-time" id="st-blue-am">—</div>
+            </div>
+            <div class="sun-pill rise">
+              <div class="sp-title" data-i18n="sun_sunrise">Схід сонця</div>
+              <div class="sp-time" id="st-sunrise">—</div>
+            </div>
+            <div class="sun-pill gold">
+              <div class="sp-title" data-i18n="sun_gold_am">Golden Hour (ранок)</div>
+              <div class="sp-time" id="st-gold-am">—</div>
+            </div>
+            <div class="sun-pill gold">
+              <div class="sp-title" data-i18n="sun_gold_pm">Golden Hour (вечір)</div>
+              <div class="sp-time" id="st-gold-pm">—</div>
+            </div>
+            <div class="sun-pill rise">
+              <div class="sp-title" data-i18n="sun_sunset">Захід сонця</div>
+              <div class="sp-time" id="st-sunset">—</div>
+            </div>
+            <div class="sun-pill blue">
+              <div class="sp-title" data-i18n="sun_blue_pm">Blue Hour (вечір)</div>
+              <div class="sp-time" id="st-blue-pm">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="spot_add_title">Зберегти точку як спот</span>
+            <span class="muted" data-i18n="spot_tap_hint">Тапни по карті для піну</span>
+          </div>
+          <div class="field">
+            <input id="inp-spot-name" type="text" data-i18n-placeholder="spot_name_ph" placeholder="Назва (напр.: Старий дворик / Міст)" />
+          </div>
+          <div class="field">
+            <div class="field-label"><span data-i18n="spot_tags_lbl">Теги</span></div>
+            <div id="spot-tag-chips" class="chips"></div>
+          </div>
+          <div class="field">
+            <textarea id="inp-spot-note" data-i18n-placeholder="spot_note_ph" placeholder="Нотатка: ракурс, коли краще світло..."></textarea>
+          </div>
+          <div class="btn-row">
+            <label class="btn btn-sm" style="cursor:pointer;">
+              <span data-i18n="spot_photo_btn">Фото локації</span>
+              <input id="inp-spot-photo" type="file" accept="image/*" style="display:none;" />
+            </label>
+            <span id="spot-photo-status" class="muted" style="align-self:center;" data-i18n="spot_no_photo">Без фото</span>
+            <button id="btn-save-spot" class="btn btn-sm btn-primary" style="margin-left:auto;" type="button" data-i18n="spot_save_btn">+ Зберегти спот</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="spot_my_title">Мої локації</span>
+            <span class="badge" id="spots-count-badge">0</span>
+          </div>
+          <div id="spots-filter-chips" class="chips" style="margin-bottom: 10px;"></div>
+          <div id="spots-list"></div>
+        </div>
+      </div>
+
+      <!-- ПІДВКЛАДКА: ШЕДЕВРИ З ПРИВ'ЯЗКОЮ ДО КАРТИ -->
+      <div id="sub-gallery" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="mp_add_title">Додати шедевр із точкою на карті</span>
+            <span class="badge badge-blue" id="mp-gps-badge" data-i18n="mp_gps_map_badge">Точка з карти</span>
+          </div>
+          <p class="muted" style="margin-top:0;" data-i18n="mp_hint">
+            Якщо у фото є EXIF-геомітка — координати підтягнуться самі! Інакше прив'яжеться поточна точка з карти.
+          </p>
+
+          <div class="field">
+            <label class="btn btn-blue" style="width:100%; cursor:pointer;">
+              <span data-i18n="mp_pick_photo">+ Вибрати фото (шедевр)</span>
+              <input id="inp-mp-photo" type="file" accept="image/*" style="display:none;" />
+            </label>
+            <img id="mp-preview" class="ai-preview-img" alt="Прев'ю" />
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 8px;">
+            <input id="inp-mp-title" type="text" data-i18n-placeholder="mp_title_ph" placeholder="Назва кадру" />
+            <input id="inp-mp-author" type="text" data-i18n-placeholder="mp_author_ph" placeholder="Автор (@нік)" />
+          </div>
+          <div class="field">
+            <input id="inp-mp-note" type="text" data-i18n-placeholder="mp_note_ph" placeholder="Деталі (напр.: 85mm f/1.8, на заході сонця)" />
+          </div>
+          <div class="btn-row">
+            <button id="btn-mp-use-gps" class="btn btn-sm" type="button" data-i18n="mp_use_gps">Взяти мій GPS</button>
+            <button id="btn-save-mp" class="btn btn-sm btn-primary" style="margin-left:auto;" type="button" data-i18n="mp_publish_btn">Опублікувати в галерею</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="mp_gallery_title">Галерея шедеврів</span>
+            <span class="badge badge-amber" id="mp-count-badge">0</span>
+          </div>
+          <div class="btn-row" style="margin-bottom: 10px;">
+            <label class="btn btn-sm btn-blue" style="cursor:pointer;">
+              <span data-i18n="mp_import_btn">+ Імпорт шедевра від друга (.fkspot)</span>
+              <input id="inp-import-mp" type="file" accept=".fkspot,.json,*/*" style="display:none;" />
+            </label>
+          </div>
+          <div id="mp-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 4: ЗЙОМКА (ЧЕКЛИСТ + МУДБОРД + СВІТЛО) ==================== -->
+    <section id="tab-shoot" class="tab-panel">
+      <div class="segmented cols-3">
+        <button class="seg-btn active" data-sub="checklist" type="button" data-i18n="sub_checklist">Чеклист</button>
+        <button class="seg-btn" data-sub="moodboard" type="button" data-i18n="sub_moodboard">Мудборд</button>
+        <button class="seg-btn" data-sub="lighting" type="button" data-i18n="sub_lighting">Світло</button>
+      </div>
+
+      <!-- Чеклист -->
+      <div id="sub-checklist" class="sub-panel active">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="check_title">Перевірка перед виходом</span>
+            <span class="badge badge-green" id="check-progress-badge">0 / 9</span>
+          </div>
+          <div class="timer-progress" style="margin-bottom: 10px;">
+            <div id="check-progress-fill" class="timer-progress-fill"></div>
+          </div>
+          <div id="checklist-container"></div>
+          <div class="field" style="margin-top: 12px;">
+            <div class="btn-row">
+              <input id="inp-new-check" type="text" data-i18n-placeholder="check_new_ph" placeholder="Додати свій пункт..." style="flex:1; min-width: 170px;" />
+              <button id="btn-add-check" class="btn btn-primary" type="button" data-i18n="check_add_btn">Додати</button>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top: 8px;">
+            <button id="btn-reset-checks" class="btn btn-sm" type="button" data-i18n="check_reset_btn">Скинути всі галочки</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Мудборд -->
+      <div id="sub-moodboard" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="mood_add_title">Додати референс / позу</span>
+            <span class="badge" id="mood-count-badge">0</span>
+          </div>
+          <div class="grid-2" style="margin-bottom: 8px;">
+            <select id="sel-mood-cat">
+              <option value="Портрет" data-i18n="mood_cat_portrait">Портрет</option>
+              <option value="Пара" data-i18n="mood_cat_couple">Пара</option>
+              <option value="Повний зріст" data-i18n="mood_cat_full">Повний зріст</option>
+              <option value="Світло / Тінь" data-i18n="mood_cat_light">Світло / Тінь</option>
+              <option value="Стріт / Деталі" data-i18n="mood_cat_street">Стріт / Деталі</option>
+            </select>
+            <input id="inp-mood-note" type="text" data-i18n-placeholder="mood_note_ph" placeholder="Нотатка (напр.: 85мм)" />
+          </div>
+          <label class="btn btn-primary" style="width:100%; cursor:pointer;">
+            <span data-i18n="mood_pick_btn">+ Вибрати фото з галереї</span>
+            <input id="inp-mood-photo" type="file" accept="image/*" multiple style="display:none;" />
+          </label>
+        </div>
+
+        <div class="card">
+          <div id="mood-filter-chips" class="chips" style="margin-bottom: 10px;"></div>
+          <div id="mood-grid" class="mood-grid"></div>
+        </div>
+      </div>
+
+      <!-- Піксельні схеми світла -->
+      <div id="sub-lighting" class="sub-panel">
+        <div class="card">
+          <div class="card-title">
+            <span data-i18n="light_title">Піксельні схеми світла</span>
+            <span class="badge badge-amber" id="light-scheme-tag">Драма / Кіно</span>
+          </div>
+          <div id="lighting-chips" class="chips" style="margin-bottom: 12px;"></div>
+          <div id="lighting-svg-box" style="margin-bottom: 10px;"></div>
+          <h3 id="light-scheme-name" style="margin: 0 0 6px; font-size: 15px; color: #ffffff;"></h3>
+          <p id="light-scheme-desc" style="margin: 0 0 8px; font-size: 13px;"></p>
+          <div class="metric">
+            <div class="metric-label" data-i18n="light_tip_lbl">Порада на зйомці</div>
+            <div id="light-scheme-tip" style="font-size: 12px; color: var(--text);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 5: НАЛАШТУВАННЯ ==================== -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="card">
+        <div class="card-title">
+          <span data-i18n="set_lang_title">Мова інтерфейсу / Language</span>
+          <span class="badge badge-amber" id="lang-active-badge">UA</span>
+        </div>
+        <div class="btn-row" id="lang-buttons">
+          <button class="btn btn-sm" data-lang="uk" type="button">🇺🇦 Українська</button>
+          <button class="btn btn-sm" data-lang="en" type="button">🇬🇧 English</button>
+        </div>
+        <p class="muted" style="margin:8px 0 0;" data-i18n="set_lang_hint">
+          Змінює мову всього додатка, редактора та відповідей AI-критика.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span data-i18n="set_theme_title">Тема оформлення</span>
+          <span class="badge badge-blue" id="theme-active-badge">Піксельна</span>
+        </div>
+        <div class="btn-row" id="theme-buttons">
+          <button class="btn btn-sm" data-theme="pixel" type="button" data-i18n="set_theme_pixel">Піксельна Синя (PARV)</button>
+          <button class="btn btn-sm" data-theme="night_red" type="button" data-i18n="set_theme_red">Нічна AMOLED Червона</button>
+          <button id="btn-theme-gold" class="btn btn-sm" data-theme="secret_gold" style="display:none;" type="button" data-i18n="set_theme_gold">★ Золота (@AziMuT_156)</button>
+        </div>
+        <p class="muted" style="margin:8px 0 0;" data-i18n="set_theme_hint">
+          Червона AMOLED-тема створена для нічних і астрозйомок — не засліплює очі в темряві.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span data-i18n="set_profile_title">Профіль і ключ AI-критика</span></div>
+        <div class="field">
+          <label class="field-label" for="inp-author-nick"><span data-i18n="set_nick_lbl">Твій нікнейм (для підпису шедеврів)</span></label>
+          <input id="inp-author-nick" type="text" data-i18n-placeholder="set_nick_ph" placeholder="@ТвійНік" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="inp-gemini-key"><span data-i18n="set_key_lbl">Ключ Gemini API (зберігається тільки на телефоні)</span></label>
+          <input id="inp-gemini-key" type="password" placeholder="AIzaSy..." />
+        </div>
+        <div class="btn-row">
+          <button id="btn-save-settings" class="btn btn-sm btn-primary" type="button" data-i18n="set_save_btn">Зберегти</button>
+          <a class="btn btn-sm" style="text-decoration:none;" target="_blank" rel="noopener" href="https://aistudio.google.com/apikey" data-i18n="set_get_key_btn">Отримати безкоштовний ключ</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span data-i18n="set_kit_title">Мій рюкзак (збережені комплекти)</span>
+          <span class="badge badge-amber" id="kit-count-badge">0</span>
+        </div>
+        <div id="kit-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span data-i18n="set_backup_title">Бекап усіх даних</span></div>
+        <p class="muted" style="margin-top: 0;" data-i18n="set_backup_desc">
+          Зберігає споти, шедеври, мудборд, чеклист і рюкзак в один файл `.json`.
+        </p>
+        <div class="btn-row">
+          <button id="btn-export-backup" class="btn btn-sm btn-blue" type="button" data-i18n="set_backup_export">Зберегти бекап (.json)</button>
+          <label class="btn btn-sm" style="cursor:pointer;">
+            <span data-i18n="set_backup_import">Відновити з файлу</span>
+            <input id="inp-import-backup" type="file" accept=".json,*/*" style="display:none;" />
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span data-i18n="set_about_title">Про додаток</span><span class="badge">v1.5</span></div>
+        <p class="muted" style="margin:0;" data-i18n="set_about_desc">
+          FrameKit — офлайн-студія та інструменти фотографа. Підказка: спробуй 5 разів швидко тапнути по піксельній камері в шапці 😉
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Нижня навігація (5 вкладок) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-editor" type="button">
+      <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="2"/></svg>
+      <span data-i18n="nav_editor">Редактор</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-calc" type="button">
+      <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/></svg>
+      <span data-i18n="nav_calc">Кальк</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-sun" type="button">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <span data-i18n="nav_sun">Сонце</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-shoot" type="button">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7H5V5h11"/></svg>
+      <span data-i18n="nav_shoot">Зйомка</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-settings" type="button">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2 2-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21h-3v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06-2-2 .06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3v-3h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06 2-2 .06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3h3v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06 2 2-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21v3h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span data-i18n="nav_settings">Налашт</span>
+    </button>
+  </nav>
+
+  <!-- Повноекранна студія фоторедактора (поверх усього, без нижнього меню) -->
+  <div id="studio-overlay" class="studio-overlay">
+    <div class="studio-topbar">
+      <button id="btn-studio-back" class="studio-topbar-btn" type="button" data-i18n="st_back">← Назад</button>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button id="btn-studio-undo" class="studio-topbar-btn" type="button" data-i18n-title="st_undo_title" title="Скасувати останню дію" disabled>↩</button>
+        <button id="btn-studio-compare" class="studio-topbar-btn" type="button" data-i18n="st_compare">До/Після</button>
+        <button id="btn-studio-reset" class="studio-topbar-btn" type="button" data-i18n="st_reset">Скинути</button>
+        <button id="btn-studio-ai" class="studio-topbar-btn" type="button">AI</button>
+        <button id="btn-studio-save" class="studio-topbar-btn save" type="button" data-i18n="st_save">Зберегти</button>
+      </div>
+    </div>
+
+    <div id="studio-stage" class="studio-stage">
+      <canvas id="studio-gl-canvas"></canvas>
+      <canvas id="studio-ui-canvas"></canvas>
+      <div id="studio-exif-badge" class="studio-exif-badge"></div>
+      <canvas id="studio-hist-canvas" width="112" height="54" data-i18n-title="st_hist_title" title="RGB Гістограма"></canvas>
+      <button id="btn-studio-paste-fab" class="studio-paste-fab" type="button" data-i18n="st_paste_fab">📋 Вставити корекції</button>
+      <div id="studio-loader" class="studio-loader">
+        <div class="studio-spinner"></div>
+        <div id="studio-loader-text">Декодую 16-біт RAW...</div>
+      </div>
+    </div>
+
+    <div class="studio-panel">
+      <div id="studio-panel-content"></div>
+    </div>
+
+    <div id="studio-tool-bar" class="studio-toolbar">
+      <button class="stool-btn" data-stool="presets" type="button" data-i18n="st_tool_presets">Пресети</button>
+      <button class="stool-btn active" data-stool="light" type="button" data-i18n="st_tool_light">Світло</button>
+      <button class="stool-btn" data-stool="color" type="button" data-i18n="st_tool_color">Колір</button>
+      <button class="stool-btn" data-stool="hsl" type="button" data-i18n="st_tool_hsl">HSL</button>
+      <button class="stool-btn" data-stool="grade" type="button" data-i18n="st_tool_grade">Тонування</button>
+      <button class="stool-btn" data-stool="curve" type="button" data-i18n="st_tool_curve">Крива</button>
+      <button class="stool-btn" data-stool="effects" type="button" data-i18n="st_tool_effects">Ефекти</button>
+      <button class="stool-btn" data-stool="masks" type="button" data-i18n="st_tool_masks">Маски</button>
+      <button class="stool-btn" data-stool="crop" type="button" data-i18n="st_tool_crop">Кроп</button>
+    </div>
+  </div>
+
+  <!-- Повноекранний перегляд фото -->
+  <div id="lightbox" class="lightbox">
+    <img id="lightbox-img" class="no-red-filter" alt="Фото" />
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+    <button id="btn-close-lightbox" class="btn btn-sm" style="margin-top:12px;" type="button" data-i18n="btn_close">Закрити</button>
+  </div>
+
+  <!-- Модалка секретної пасхалки @AziMuT_156 -->
+  <div id="easter-modal" class="easter-modal">
+    <div class="easter-box">
+      <img src="./icons/icon-192.png" class="easter-icon no-red-filter" alt="PARV" />
+      <div class="easter-title" data-i18n-html="easter_title">★ SECRET AZIMUTH 156° ★<br/>ПАСХАЛКУ ЗНАЙДЕНО!</div>
+      <p style="font-size:13px; margin:0 0 12px;" data-i18n-html="easter_credit">
+        Ідея та піксельний стиль:<br/>
+        <strong style="color:#fde047; font-size:15px;">@AziMuT_156</strong>
+      </p>
+      <div class="btn-row" style="justify-content:center; flex-direction:column;">
+        <a class="btn btn-blue" style="text-decoration:none; width:100%;" target="_blank" rel="noopener" href="https://t.me/AziMuT_156" data-i18n="easter_tg_btn">
+          Відкрити Telegram @AziMuT_156
+        </a>
+        <button id="btn-easter-gold" class="btn btn-primary" style="width:100%;" type="button" data-i18n="easter_gold_btn">
+          ★ Увімкнути секретну Золоту тему
+        </button>
+        <button id="btn-close-easter" class="btn btn-sm" style="width:100%;" type="button" data-i18n="btn_close">Закрити</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./vendor/leaflet.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

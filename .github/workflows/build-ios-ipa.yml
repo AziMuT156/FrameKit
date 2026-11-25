@@ -7,7 +7,9 @@ on:
 
 jobs:
   build-ipa:
-    runs-on: macos-15
+    runs-on: macos-latest
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
       - uses: actions/checkout@v4
 
